@@ -8,12 +8,30 @@ from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
 
 
-STATES = [['MS' , '  ' , '  ' , '  ' , '  ' ],
-          ['  ' , '  ' , '  ' , '  ' , 'FB' ],
+STATES = [['MS' , '  ' , '  ' , 'FB' , '  ' ],
+          ['  ' , '  ' , '  ' , '  ' , '  ' ],
+          ['  ' , '  ' , '  ' , '  ' , '  ' ],
           ['FF' , 'FF' , '  ' , 'CR' , '  ' ],
           ['  ' , '  ' , 'FB' , '  ' , '  ' ],
+          ['  ' , '  ' , '  ' , '  ' , '  ' ],
           ['FT' , '  ' , '  ' , '  ' , 'SR' ]]
 
+AUDIO  = [['( 1,  1, -4, -3)' , '( 1,  1, -3, -3)' , '( 1, 1, -2,  1)' , '( 1,  1,  1, 1)' , '(-2,  1,  1, 1)' ],
+          ['( 1,  1,  1, -2)' , '( 1,  1,  1, -2)' , '( 1, 1,  1, -4)' , '( 1, -2,  1, 1)' , '( 1,  1,  1, 1)' ],
+          ['( 1,  1,  1, -1)' , '( 1,  1,  1, -1)' , '( 1, 1,  1, -3)' , '( 1, -3,  1, 1)' , '( 1,  1,  1, 1)' ],
+          ['( 1,  1, -1,  1)' , '(-1,  1,  1,  1)' , '(-1, 1,  1, -2)' , '(-2, -4,  1, 1)' , '(-3,  1,  1, 1)' ],
+          ['( 1, -1, -3,  1)' , '( 1, -1, -2,  1)' , '( 1, 1,  1,  1)' , '(-2,  1,  1, 1)' , '(-3,  1,  1, 1)' ],
+          ['( 1, -2,  1,  1)' , '( 1, -2,  1,  1)' , '( 1,-2,  1,  1)' , '( 1,  1,  1, 1)' , '( 1,  1,  1, 1)' ],
+          ['( 1, -3,  1,  1)' , '( 1, -3,  1,  1)' , '( 1,-3,  1,  1)' , '( 1,  1,  1, 1)' , '( 1,  1,  1, 1)' ]]
+
+AUDIO_INTENSITY = {
+    1: 0,
+    0: 83,
+    -1: 72,
+    -2: 60,
+    -3: 50,
+    -4: 37
+    }
 ACTIONS = {
         0: ['L',(0,-1)], #Left
         1: ['U',(-1,0)], #Up
@@ -106,7 +124,7 @@ class MyMarioEnvironment(gym.Env):
                 if new_reward > 0:
                     self.reward_states_gained.append(self.state)
             self.states[self.current_pt[0]][self.current_pt[1]] = -5
-            self.observation = self.states.flatten()
+            self.observation = self._get_audio_observation(*self.current_pt) #self.states.flatten()
             self.reward_states_gained = [] if done else self.reward_states_gained
             info = {'action_performed':self.actions[self.current_action_index][0], 'prob':prob}
         return self.observation, self.new_reward, done, info
@@ -120,7 +138,7 @@ class MyMarioEnvironment(gym.Env):
         self.timestep = 0
         self.states, self.start_pt, self.end_pt, self.current_pt, self.current_state = self._get_state_space(self.environment, self.rewards)
         self.state = self._get_state_from_xy(*self.current_pt)
-        self.observation = self.states.flatten()
+        self.observation = self._get_audio_observation(*self.current_pt) #self.states.flatten()
         return self.observation
 
     def render(self, mode:str="rgb", icons:dict=ICONS):
@@ -159,6 +177,10 @@ class MyMarioEnvironment(gym.Env):
             plt.yticks([0, 1, 2, 3, 4])
             plt.grid()  
             plt.show()
+
+    def _get_audio_observation(self, current_x, current_y):
+        obs = eval(AUDIO[current_x][current_y])
+        return (self._get_state_from_xy(current_x, current_y), AUDIO_INTENSITY[obs[0]], AUDIO_INTENSITY[obs[1]], AUDIO_INTENSITY[obs[2]], AUDIO_INTENSITY[obs[3]])
 
     def _get_action_letter_map(self, actions):
         action_letter = {}
