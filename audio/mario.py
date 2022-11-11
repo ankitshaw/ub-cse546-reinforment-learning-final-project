@@ -154,7 +154,7 @@ class MyMarioEnvironment(gym.Env):
         elif mode == "human":
             fig, ax = plt.subplots(figsize=(10, 10))
             ax.set_xlim(0, 5)
-            ax.set_ylim(0, 5)
+            ax.set_ylim(0, 7)
             im = plt.imread("./images/bg.jpg")
             im = ax.imshow(im)
             for r in range(self.env_row):
@@ -170,11 +170,11 @@ class MyMarioEnvironment(gym.Env):
                     else:
                         continue
 
-                    agent = AnnotationBbox(OffsetImage(plt.imread(img), zoom=0.5), np.add((c,4-r), [0.5, 0.5]), frameon=False)
+                    agent = AnnotationBbox(OffsetImage(plt.imread(img), zoom=0.5), np.add((c,6-r), [0.5, 0.5]), frameon=False)
                     ax.add_artist(agent)      
 
             plt.xticks([0, 1, 2, 3, 4])
-            plt.yticks([0, 1, 2, 3, 4])
+            plt.yticks([0, 1, 2, 3, 4, 5, 6])
             plt.grid()  
             plt.show()
 
