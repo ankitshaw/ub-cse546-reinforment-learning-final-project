@@ -5,9 +5,9 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-
 from typing import List
-
+import torch.nn.functional as F
+import torch
 
 
 STATES = [['MS' , '  ' , '  ' , 'FB' , '  ' ],
@@ -15,8 +15,8 @@ STATES = [['MS' , '  ' , '  ' , 'FB' , '  ' ],
           ['  ' , '  ' , '  ' , '  ' , '  ' ],
           ['FF' , 'FF' , '  ' , 'CR' , '  ' ],
           ['  ' , '  ' , 'FB' , '  ' , '  ' ],
-          ['  ' , '  ' , '  ' , '  ' , '  ' ],
-          ['FT' , '  ' , '  ' , '  ' , 'SR' ]]
+          ['  ' , '  ' , '  ' , 'SR' , '  ' ],
+          ['  ' , '  ' , '  ' , '  ' , 'FT' ]]
 
 AUDIO  = [['( 1,  1, -4, -3)' , '( 1,  1, -3, -3)' , '( 1, 1, -2,  1)' , '( 1,  1,  1, 1)' , '(-2,  1,  1, 1)' ],
           ['( 1,  1,  1, -2)' , '( 1,  1,  1, -2)' , '( 1, 1,  1, -4)' , '( 1, -2,  1, 1)' , '( 1,  1,  1, 1)' ],
@@ -64,7 +64,7 @@ ICONS = {
 
     }
 
-class MyMarioEnvironment(gym.Env):
+class MyMarioEnvironment2(gym.Env):
     def __init__(self, environment:List[list]=STATES, actions:dict=ACTIONS, rewards:dict=REWARDS, p_transition:float=1.0, environment_type:str='deterministic'):
         """This function is used to initialize the Environment Class
 
@@ -126,10 +126,10 @@ class MyMarioEnvironment(gym.Env):
                 if new_reward > 0:
                     self.reward_states_gained.append(self.state)
             self.states[self.current_pt[0]][self.current_pt[1]] = -5
-            self.observation = self._get_audio_observation(*self.current_pt) #self.states.flatten()
+            self.observation, self.audio = self._get_audio_observation(*self.current_pt) #self.states.flatten()
             self.reward_states_gained = [] if done else self.reward_states_gained
             info = {'action_performed':self.actions[self.current_action_index][0], 'prob':prob}
-        return self.observation, self.new_reward, done, info
+        return self.observation, self.audio, self.new_reward, done, info
         
     def reset(self):
         """Reset's the environment with initial values
@@ -140,8 +140,8 @@ class MyMarioEnvironment(gym.Env):
         self.timestep = 0
         self.states, self.start_pt, self.end_pt, self.current_pt, self.current_state = self._get_state_space(self.environment, self.rewards)
         self.state = self._get_state_from_xy(*self.current_pt)
-        self.observation = self._get_audio_observation(*self.current_pt) #self.states.flatten()
-        return self.observation
+        self.observation, self.audio = self._get_audio_observation(*self.current_pt) #self.states.flatten()
+        return self.observation, self.audio
 
     def render(self, mode:str="rgb", icons:dict=ICONS):
         """Renders the environment
@@ -182,7 +182,10 @@ class MyMarioEnvironment(gym.Env):
 
     def _get_audio_observation(self, current_x, current_y):
         obs = eval(AUDIO[current_x][current_y])
-        return (self._get_state_from_xy(current_x, current_y), AUDIO_INTENSITY[obs[0]], AUDIO_INTENSITY[obs[1]], AUDIO_INTENSITY[obs[2]], AUDIO_INTENSITY[obs[3]])
+        state = F.one_hot(torch.tensor(self._get_state_from_xy(current_x, current_y)), num_classes=self.env_row*self.env_col)
+        lst = [s for s in state.numpy()]
+        aud = [AUDIO_INTENSITY[obs[0]], AUDIO_INTENSITY[obs[1]], AUDIO_INTENSITY[obs[2]], AUDIO_INTENSITY[obs[3]]]
+        return lst, aud
 
     def _get_action_letter_map(self, actions):
         action_letter = {}
