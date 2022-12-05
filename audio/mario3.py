@@ -13,18 +13,18 @@ import torch
 STATES = [['MS' , '  ' , '  ' , 'FB' , '  ' ],
           ['  ' , '  ' , '  ' , '  ' , '  ' ],
           ['  ' , '  ' , '  ' , '  ' , '  ' ],
-          ['FF' , 'FF' , '  ' , 'CR' , '  ' ],
-          ['  ' , '  ' , 'FB' , '  ' , '  ' ],
+          ['FF' , 'FF' , '  ' , 'FB' , '  ' ],
+          ['  ' , '  ' , 'CR' , '  ' , '  ' ],
           ['  ' , '  ' , '  ' , 'SR' , '  ' ],
           ['  ' , '  ' , '  ' , '  ' , 'FT' ]]
 
-AUDIO  = [['( 1,  1, -4, -3)' , '( 1,  1, -3, -3)' , '( 1, 1, -2,  1)' , '( 1,  1,  1, 1)' , '(-2,  1,  1, 1)' ],
-          ['( 1,  1,  1, -2)' , '( 1,  1,  1, -2)' , '( 1, 1,  1, -4)' , '( 1, -2,  1, 1)' , '( 1,  1,  1, 1)' ],
-          ['( 1,  1,  1, -1)' , '( 1,  1,  1, -1)' , '( 1, 1,  1, -3)' , '( 1, -3,  1, 1)' , '( 1,  1,  1, 1)' ],
-          ['( 1,  1, -1,  1)' , '(-1,  1,  1,  1)' , '(-1, 1,  1, -2)' , '(-2, -4,  1, 1)' , '(-3,  1,  1, 1)' ],
-          ['( 1, -1, -3,  1)' , '( 1, -1, -2,  1)' , '( 1, 1,  1,  1)' , '(-2,  1,  1, 1)' , '(-3,  1,  1, 1)' ],
-          ['( 1, -2,  1,  1)' , '( 1, -2,  1,  1)' , '( 1,-2,  1,  1)' , '( 1,  1,  1, 1)' , '( 1,  1,  1, 1)' ],
-          ['( 1, -3,  1,  1)' , '( 1, -3,  1,  1)' , '( 1,-3,  1,  1)' , '( 1,  1,  1, 1)' , '( 1,  1,  1, 1)' ]]
+AUDIO  = [['( 1,  1, -4, -3)' , '( 1,  1, -3, -3)' , '( 1, 1, -2,  1)' , '( 1,  1,  1,-4)' , '(-2,  1,  1, 1)' ],
+          ['( 1,  1,  1, -2)' , '( 1,  1,  1, -2)' , '( 1, 1,  1,  1)' , '( 1, -2,  1,-3)' , '( 1,  1,  1, 1)' ],
+          ['( 1,  1,  1, -1)' , '( 1,  1,  1, -1)' , '( 1, 1,  1,  1)' , '( 1, -3,  1,-2)' , '( 1,  1,  1, 1)' ],
+          ['( 1,  1, -1,  1)' , '(-1,  1, -3,  1)' , '(-1, 1, -2,  1)' , '(-2, -4,  1, 1)' , '(-2,  1,  1, 1)' ],
+          ['( 1, -1,  1,  1)' , '( 1, -1,  1,  1)' , '( 1, 1,  1,  1)' , '( 1, -2,  1, 1)' , '( 1,  1,  1, 1)' ],
+          ['( 1, -2,  1,  1)' , '( 1, -2,  1,  1)' , '( 1, 1,  1,  1)' , '( 1, -3,  1, 1)' , '( 1,  1,  1, 1)' ],
+          ['( 1, -3,  1,  1)' , '( 1, -3,  1,  1)' , '( 1, 1,  1,  1)' , '( 1, -4,  1, 1)' , '( 1,  1,  1, 1)' ]]
 
 AUDIO_INTENSITY = {
     1: 0,
@@ -143,7 +143,7 @@ class MyMarioEnvironment2(gym.Env):
         self.observation, self.audio = self._get_audio_observation(*self.current_pt) #self.states.flatten()
         return self.observation, self.audio
 
-    def render(self, mode:str="rgb", icons:dict=ICONS):
+    def render(self, mode:str="rgb", icons:dict=ICONS, save=False, step=None):
         """Renders the environment
 
         Args:
@@ -177,8 +177,11 @@ class MyMarioEnvironment2(gym.Env):
 
             plt.xticks([0, 1, 2, 3, 4])
             plt.yticks([0, 1, 2, 3, 4, 5, 6])
+            fig1 = plt.gcf()
             plt.grid()  
             plt.show()
+            if save:
+                fig.savefig(f'Step_{step}.png',bbox_inches='tight')
 
     def _get_audio_observation(self, current_x, current_y):
         obs = eval(AUDIO[current_x][current_y])
@@ -240,6 +243,10 @@ class MyMarioEnvironment2(gym.Env):
     def _get_step_transition(self, current_pt, current_action):
         next_pt = self._get_next_pt(action=self.actions[current_action][1], pt = current_pt)
         new_state = self._get_state_from_xy(*next_pt)
+        if next_pt[0] == current_pt[0] and next_pt[1] == current_pt[1]:
+            r = -1
+        else:
+            r = 0
         reward = self._get_reward(next_pt)
         done = True if np.array_equal(self.end_pt,next_pt) else False
         return next_pt, reward, done 
